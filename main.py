@@ -160,12 +160,92 @@ make_save_msd('w2v', experiment, y_or_d, frac)
 #%% 
 
 import math
-falog10 = [math.log10(_) for _ in allitemcntr.values()]
+falog2_d = {k:math.log2(v+1) for k, v in allitemcntr.items()}
 plt.hist(allitemcntr.values())
-plt.hist(falog10)
+plt.hist(falog2_d.values())
+
+from simmetric import *
+msd = load_msd('coo', experiment, y_or_d, frac)
 
 
-coo_msd = load_msd('coo', experiment, y_or_d, frac)
+x = [allitemcntr[i] for i in range(1, nof_items+1)]
+y = [msd[i][1] for i in range(1, nof_items+1)]
+plt.scatter(x, y, s=x, alpha=0.5)
+
+
+M = max([_ for _ in falog2_d.values()])
+x = [falog2_d[i] for i in range(1, nof_items+1)]
+y = [msd[i][1] for i in range(1, nof_items+1)]
+plt.scatter(x, y, alpha=0.5)
+
+
+min(falog2_d.values())
+
+
+math.log2(2)
+#%%
+sid = 5465
+testss = tra_seqs_frac[sid]
+
+print(f'아이템 \t FA \t log2FA \t HS')
+for idx in range(len(testss)):
+    item = testss[idx]
+    faterm = 100 * gaussian(0, 3, falog2_d[item])
+    hsterm = 100 * gaussian(1, 0.4, msd[item][1])
+    
+    print(f'{item:5} \t {allitemcntr[item]:4} \t {falog2_d[item]:5.2f} \t {msd[item][1]:6.4f} \t {faterm:5.2f} X {hsterm:5.2f} = {faterm * hsterm:5.2f}')
+    
+#%% 아이템별 랭킹 매겨보기
+ranking = []
+for i in range(1, nof_items+1):
+    faterm = 100 * gaussian(0, 3, falog2_d[i])
+    hsterm = 100 * gaussian(1, 0.4, msd[i][1])
+    
+    ranking.append((i, faterm * hsterm, allitemcntr[i], msd[i][1]))
+#%%
+
+s_ranking = sorted(ranking, key=lambda x: x[1], reverse=True)
+s_ranking[12000:12500]
+
+#%%
+def gaussian(mu, sigma, x):
+    y = (1 / np.sqrt(2 * np.pi * sigma**2)) * np.exp(-(x-mu)**2 / (2 * sigma**2))
+    return y
+    
+
+#%%
+
+
+mu = 1.0
+sigma = 0.1
+
+x = np.linspace(0, 3, 1000)
+y = gaussian(mu, sigma, x)
+plt.scatter(x, y)
+
+#%%
+
+x = [falog2_d[i] for i in range(1, nof_items+1)]
+y = [100 * gaussian(0, 3, _) for _ in x]
+
+plt.scatter(x, y)
+
+#%%
+
+x = [msd[i][1] for i in range(1, nof_items+1)]
+y = [100*gaussian(1, 0.4, _) for _ in x]
+
+plt.scatter(x, y)
+
+
+
+
+
+
+
+
+
+
 
 
 
