@@ -350,3 +350,10 @@ def load_msd(simmetabbr, experiment, y_or_d, frac):
     most_sim_d = pickle.load(f)
 
   return most_sim_d
+
+
+#%% 가우시안 함수
+
+def gaussian(mu, sigma, x):
+    y = (1 / np.sqrt(2 * np.pi * sigma**2)) * np.exp(-(x-mu)**2 / (2 * sigma**2))
+    return y

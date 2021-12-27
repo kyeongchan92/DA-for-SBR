@@ -125,7 +125,7 @@ nof_items = len(allitemcntr)
 print(f'총 아이템 수 : {nof_items}')
 
 
-#%% 유사도지표 만들어 저장
+#%% 유사도지표 만들어 저장(한번만 실행)
 
 from simmetric import *
 
@@ -193,24 +193,23 @@ for idx in range(len(testss)):
     faterm = 100 * gaussian(0, 3, falog2_d[item])
     hsterm = 100 * gaussian(1, 0.4, msd[item][1])
     
-    print(f'{item:5} \t {allitemcntr[item]:4} \t {falog2_d[item]:5.2f} \t {msd[item][1]:6.4f} \t {faterm:5.2f} X {hsterm:5.2f} = {faterm * hsterm:5.2f}')
+    print(f'{item:5} \t {allitemcntr[item]:4} \t {falog2_d[item]:5.2f} \t {msd[item][1]:6.4f} \t {faterm:5.2f} + {hsterm:5.2f} = {ranking[item][0]:5.2f}')
     
 #%% 아이템별 랭킹 매겨보기
-ranking = []
+ranking = {}
 for i in range(1, nof_items+1):
     faterm = 100 * gaussian(0, 3, falog2_d[i])
     hsterm = 100 * gaussian(1, 0.4, msd[i][1])
     
-    ranking.append((i, faterm * hsterm, allitemcntr[i], msd[i][1]))
+    ranking[i] = (faterm + hsterm, allitemcntr[i], msd[i][1])
 #%%
 
 s_ranking = sorted(ranking, key=lambda x: x[1], reverse=True)
+s_ranking[:100]
 s_ranking[12000:12500]
 
 #%%
-def gaussian(mu, sigma, x):
-    y = (1 / np.sqrt(2 * np.pi * sigma**2)) * np.exp(-(x-mu)**2 / (2 * sigma**2))
-    return y
+
     
 
 #%%
@@ -221,24 +220,56 @@ sigma = 0.1
 
 x = np.linspace(0, 3, 1000)
 y = gaussian(mu, sigma, x)
-plt.scatter(x, y)
+plt.plot(x, y)
 
 #%%
+
+
+mu1, sd1 = M, 3
 
 x = [falog2_d[i] for i in range(1, nof_items+1)]
-y = [100 * gaussian(0, 3, _) for _ in x]
-
+y = [100 * gaussian(mu1, sd1, _) for _ in x]
 plt.scatter(x, y)
+
+# 가우시안 선
+x = np.linspace(-3, 15, 1000)
+y = gaussian(mu1, sd1, x) * 100
+plt.plot(x, y)
+
+
+plt.axvline(x=mu1, color='r')
+plt.axvline(x=M, color='r')
+
+
+plt.xlabel('log2(FA)', fontsize=20)
+plt.title(f'100 X N(mu={mu1:.2f}, sd={sd1})', fontsize=20)
+
 
 #%%
 
+
+mu2, sd2 = 0, 0.4
+
 x = [msd[i][1] for i in range(1, nof_items+1)]
-y = [100*gaussian(1, 0.4, _) for _ in x]
+y = [100*gaussian(mu2, sd2, _) for _ in x]
 
 plt.scatter(x, y)
 
+# 가우시안 선
+x = np.linspace(0, 1.2, 1000)
+y = gaussian(mu2, sd2, x) * 100
+plt.plot(x, y)
 
 
+plt.axvline(x=0, color='r')
+plt.axvline(x=1, color='r')
+
+
+plt.xlabel('HS', fontsize=20)
+plt.title(f'100 X N(mu={mu2}, sd={sd2})', fontsize=20)
+
+
+#%%
 
 
 
