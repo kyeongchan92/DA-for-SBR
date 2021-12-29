@@ -1,9 +1,5 @@
 # # DA-for-SBR
 
 Data augmentation method for session-based recommendation
-$$
-s = \alpha \mathcal{N}(\log_2\text{FA}|\mu_1, \sigma_1) + \beta\mathcal{N}(\text{HS}|\mu_2,\sigma_2) \\ \\
-s\text{ : score}\\
-\text{FA : Frequency of Appearance} \\
-\text{HS : Highest similarity value}
-$$
+
+![수식](https://user-images.githubusercontent.com/25517592/147627478-b17609e3-8ac6-4886-bf00-63381fb21b61.gif)
