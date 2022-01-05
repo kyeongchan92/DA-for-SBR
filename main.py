@@ -49,11 +49,11 @@ if not os.path.exists(f'exps/experiment{experiment}/result_srgnn_diginetica'):
 
 
 
-#%%
+#%% yoochoose or diginetica
 
 y_or_d = 'yoochoose'  # yoochoose or diginetica
 
-#%% 원본데이터 전처리
+#%% 원본데이터 전처리 (한 번만 실행)
 
 
 if y_or_d == 'yoochoose':
@@ -73,7 +73,7 @@ print(f'원본데이터 통계량')
 
 
 
-#%% train 데이터로 저장 (마지막 아이템 떼서 라벨로)
+#%% train 데이터로 저장 (한 번만 실행)(마지막 아이템 떼서 라벨로)
 
 for f in fracs:
     split_frac = int(len(tra_sess) * f)
@@ -100,7 +100,8 @@ for f in fracs:
     pickle.dump(tra_frac, open(train_name, 'wb'))
     pickle.dump(tes, open(test_name, 'wb'))
 
-#%% 
+#%%  tra_seqs_frac 불러오기
+
 from preprocessing import *
 
 frac = 1/64
@@ -157,7 +158,7 @@ make_save_msd('tan', experiment, y_or_d, frac)
 make_save_msd('cos', experiment, y_or_d, frac)
 make_save_msd('w2v', experiment, y_or_d, frac)
 
-#%% 
+#%% falog2만들기
 
 import math
 falog2_d = {k:math.log2(v+1) for k, v in allitemcntr.items()}
@@ -170,7 +171,7 @@ msd = load_msd('coo', experiment, y_or_d, frac)
 
 x = [allitemcntr[i] for i in range(1, nof_items+1)]
 y = [msd[i][1] for i in range(1, nof_items+1)]
-plt.scatter(x, y, s=x, alpha=0.5)
+plt.scatter(x, y, alpha=0.5)
 
 
 M = max([_ for _ in falog2_d.values()])
@@ -183,32 +184,72 @@ min(falog2_d.values())
 
 
 math.log2(2)
-#%%
+
+#%% 아이템별 랭킹 매겨보기
+
+alpha = 500
+mu1 = 0
+sigma1 = 3
+
+
+beta = 500
+mu2 = 1
+sigma2 = 0.4
+
+
+ranking = {}
+for i in range(1, nof_items+1):
+    faterm = alpha * gaussian(mu1, sigma1, falog2_d[i])
+    hsterm = beta * gaussian(mu2, sigma2, msd[i][1])
+    
+    ranking[i] = (faterm + hsterm, allitemcntr[i], msd[i][1])
+#%% 세션 하나 테스트로 보기
+
 sid = 5465
 testss = tra_seqs_frac[sid]
 
 print(f'아이템 \t FA \t log2FA \t HS')
 for idx in range(len(testss)):
     item = testss[idx]
-    faterm = 100 * gaussian(0, 3, falog2_d[item])
-    hsterm = 100 * gaussian(1, 0.4, msd[item][1])
+    faterm = alpha * gaussian(mu1, sigma1, falog2_d[item])
+    hsterm = beta * gaussian(mu2, sigma2, msd[item][1])
     
     print(f'{item:5} \t {allitemcntr[item]:4} \t {falog2_d[item]:5.2f} \t {msd[item][1]:6.4f} \t {faterm:5.2f} + {hsterm:5.2f} = {ranking[item][0]:5.2f}')
+
+scoresum = 0
+scorelist = []
+for idx in range(len(testss)):
+    item = testss[idx]
+    scoresum += ranking[item][0]
+    scorelist.append(ranking[item][0])
     
-#%% 아이템별 랭킹 매겨보기
-ranking = {}
-for i in range(1, nof_items+1):
-    faterm = 100 * gaussian(0, 3, falog2_d[i])
-    hsterm = 100 * gaussian(1, 0.4, msd[i][1])
+
+print()
+
+np.random.choice(range(testss), )
+
+aug_it_idxs = list(np.random.choice(range(slen), int(0.25 * slen), False))
     
-    ranking[i] = (faterm + hsterm, allitemcntr[i], msd[i][1])
 #%%
 
-s_ranking = sorted(ranking, key=lambda x: x[1], reverse=True)
+s_ranking = sorted(ranking.items(), key=lambda x: x[1][0], reverse=True)
 s_ranking[:100]
 s_ranking[12000:12500]
 
-#%%
+
+#%% 세션의 평균 살짝 보기
+
+for _ in range(300, 350):
+    s = tra_seqs_frac[_]
+    
+    scoresum = 0
+    scorelist = []
+    for idx in range(len(s)):
+        item = s[idx]
+        scoresum += ranking[item][0]
+        scorelist.append(ranking[item][0])
+    print(f'session : {s} \n score mean : {np.mean(scorelist):.2f}')
+    
 
     
 
@@ -222,42 +263,45 @@ x = np.linspace(0, 3, 1000)
 y = gaussian(mu, sigma, x)
 plt.plot(x, y)
 
-#%%
+#%% 출현빈도 그리기
 
+min(falog2_d.values())
+min(allitemcntr.values())
 
-mu1, sd1 = M, 3
+mu1, sigma1 = M, 3
 
+# x, y 생성
 x = [falog2_d[i] for i in range(1, nof_items+1)]
-y = [100 * gaussian(mu1, sd1, _) for _ in x]
+y = [alpha * gaussian(mu1, sigma1, _) for _ in x]
 plt.scatter(x, y)
 
 # 가우시안 선
 x = np.linspace(-3, 15, 1000)
-y = gaussian(mu1, sd1, x) * 100
+y = gaussian(mu1, sigma1, x) * alpha
 plt.plot(x, y)
 
-
+# 수선
 plt.axvline(x=mu1, color='r')
 plt.axvline(x=M, color='r')
 
 
 plt.xlabel('log2(FA)', fontsize=20)
-plt.title(f'100 X N(mu={mu1:.2f}, sd={sd1})', fontsize=20)
+plt.title(f'100 X N(mu1={mu1:.2f}, sigma1={sigma1})', fontsize=20)
 
 
 #%%
 
 
-mu2, sd2 = 0, 0.4
+mu2, sigma2 = 1, 0.4
 
 x = [msd[i][1] for i in range(1, nof_items+1)]
-y = [100*gaussian(mu2, sd2, _) for _ in x]
+y = [100*gaussian(mu2, sigma2, _) for _ in x]
 
 plt.scatter(x, y)
 
 # 가우시안 선
 x = np.linspace(0, 1.2, 1000)
-y = gaussian(mu2, sd2, x) * 100
+y = gaussian(mu2, sigma2, x) * 100
 plt.plot(x, y)
 
 
@@ -266,10 +310,12 @@ plt.axvline(x=1, color='r')
 
 
 plt.xlabel('HS', fontsize=20)
-plt.title(f'100 X N(mu={mu2}, sd={sd2})', fontsize=20)
+plt.title(f'100 X N(mu2={mu2}, sigma2={sigma2})', fontsize=20)
 
 
-#%%
+#%% 스코어대로 증강해보기
+
+
 
 
 
