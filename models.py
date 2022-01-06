@@ -103,7 +103,7 @@ def narm(train_fns, experiment, y_or_d, frac):
     parser.add_argument('--topk', type=int, default=20, help='number of top score items selected for calculating recall and mrr metrics')
     parser.add_argument('--valid', action='store_true', help='test')
     parser.add_argument('--valid_portion', type=float, default=0.1, help='split the portion of training set as validation set')
-    args = parser.parse_args()
+    args = parser.parse_args([])
     print(args)
     
     
@@ -155,18 +155,20 @@ def narm(train_fns, experiment, y_or_d, frac):
             hits.append(recall)
             mrrs.append(mrr)
       
-            print(f'{train_fn} \t {i+1}/{len(train_fns)}')
-            print(f'{test_fn}')
-            print(f'Epoch {epoch} validation: Recall@{args.topk}: {recall:.4f}, MRR@{args.topk}: {mrr:.4f} \n')
-      
+            print(f'Epoch {epoch} : Recall@{args.topk}: {recall:.4f}, MRR@{args.topk}: {mrr:.4f} \t{train_fn} \t {i+1}/{len(train_fns)} \t {test_fn}')
         
-        # 파일 하다 돌릴때마다 저장할것 (코랩 끊길수도있으니까)
-        with open(f'exps/experiment{experiment}/result_{modelname}_{y_or_d}/{y_or_d[0]}{int(1/frac):03}/{train_fn}_hits.pkl', 'wb') as q:
-          pickle.dump(hits, q)
-      
-        with open(f'exps/experiment{experiment}/result_{modelname}_{y_or_d}/{y_or_d[0]}{int(1/frac):03}/{train_fn}_mrrs.pkl', 'wb') as q:
-          pickle.dump(mrrs, q)
-    
+        
+        try:
+            # 파일 하다 돌릴때마다 저장할것 (코랩 끊길수도있으니까)
+            with open(f'exps/experiment{experiment}/result_narm_{y_or_d}/{y_or_d[0]}{int(1/frac):03}/{train_fn}_hits.pkl', 'wb') as q:
+              pickle.dump(hits, q)
+          
+            with open(f'exps/experiment{experiment}/result_narm_{y_or_d}/{y_or_d[0]}{int(1/frac):03}/{train_fn}_mrrs.pkl', 'wb') as q:
+              pickle.dump(mrrs, q)
+              
+            
+        except:  # 만약 파일명 등의 문제로 저장이 안 될 경우 결과 리턴
+            return hits, mrrs
 
 
 
@@ -259,10 +261,10 @@ def srgnn(train_fns, experiment, y_or_d, frac):
         print(f'{train_fn}____________________________' * 100)
     
         # 파일 하다 돌릴때마다 저장할것 (코랩 끊길수도있으니까)
-        with open(f'exps/experiment{experiment}/result_{modelname}_{y_or_d}/{y_or_d[0]}{int(1/frac)}/{train_fn}_hits.pkl', 'wb') as q:
+        with open(f'exps/experiment{experiment}/result_srgnn_{y_or_d}/{y_or_d[0]}{int(1/frac)}/{train_fn}_hits.pkl', 'wb') as q:
             pickle.dump(hits, q)
     
-        with open(f'exps/experiment{experiment}/result_{modelname}_{y_or_d}/{y_or_d[0]}{int(1/frac)}/{train_fn}_mrrs.pkl', 'wb') as q:
+        with open(f'exps/experiment{experiment}/result_srgnn_{y_or_d}/{y_or_d[0]}{int(1/frac)}/{train_fn}_mrrs.pkl', 'wb') as q:
             pickle.dump(mrrs, q)
 
 
