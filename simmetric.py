@@ -4,6 +4,9 @@ from gensim.models import Word2Vec
 from scipy.sparse import csr_matrix
 import pickle
 from itertools import combinations
+from collections import Counter
+
+import utils
 
 # 유사도지표 만들기 함수
 
@@ -91,7 +94,7 @@ def get_co_matrix_win(sessions, window_size, diag_freq = False, remove_dup = Fal
 
 
 
-#%% PPMI
+# PPMI
 def ppmi(C, verbose=False, eps=1e-8):
     M = np.zeros_like(C, dtype=np.float32)
     N = np.sum(C)
@@ -114,7 +117,7 @@ def ppmi(C, verbose=False, eps=1e-8):
 # print("time :", time.time() - start)  # 현재시각 - 시작시간 = 실행 시간
   
 
-#%% 3 jaccard 만들기(window)
+# 3 jaccard 만들기(window)
 
 def get_jaccard_mat(sessions, window_size, diag_freq = False, remove_dup = False):
   # window_size: 본인 코드에서 lr_n_each와 동일한 값
@@ -175,7 +178,7 @@ def get_jaccard_mat(sessions, window_size, diag_freq = False, remove_dup = False
 
 # jac_mat = get_jaccard_mat(tra_seqs_frac, 5, diag_freq = True, remove_dup = True)
 
-#%% 4 Tanimoto 만들기
+# 4 Tanimoto 만들기
 
 
 '''두 아이템이 모두 자기 자신과밖에 등장하지 않았을 경우 nan이 나온다
@@ -247,7 +250,7 @@ def get_tanimoto(sessions, window_size, diag_freq = False, remove_dup = False):
 
 # tanimoto_mat = get_tanimoto(tra_seqs_frac, window_size=5, diag_freq=True, remove_dup=True)
 
-#%% 5 cosine 만들기(윈도우)
+# 5 cosine 만들기(윈도우)
 
 def get_cosine(co_mat):
   M = np.zeros_like(co_mat, dtype=np.float32)
@@ -265,9 +268,23 @@ def get_cosine(co_mat):
 
 # cosine_mat_win = get_cosine(co_mat_win)
 
-#%% 6 Word2vec 만들기
+# 6 Word2vec 만들기
 
-def get_w2v_model(tra_seqs_frac, nof_items):
+def get_w2v_model(tra_seqs_frac):
+    
+  allsess = []
+  for s in tra_seqs_frac:
+    allsess += s
+    
+  allaprcnt = len(allsess)
+  print(f'모든 세션의 아이템 출현 수 : {allaprcnt}')
+    
+  # 아이템별 출현 횟수 카운트
+  allitemcntr = Counter(allsess)
+    
+  # 아이템의 개수 구하기
+  nof_items = len(allitemcntr)
+    
   str_tra_seqs = []
   for s in tra_seqs_frac:
       str_tra_seqs.append(list(map(str, s)))
@@ -283,19 +300,19 @@ def get_w2v_model(tra_seqs_frac, nof_items):
 
 
 
-#%%
+#
 
 # 유사도행렬 csr로 변환 후 저장
 def save_mat_as_csr(matrix, matname, experiment, y_or_d, frac):
     csr_mat = csr_matrix(matrix)
-    filename = f'exps/experiment{experiment}/{y_or_d}/{y_or_d[0]}{int(1/frac):03}_csr_{matname}.pkl'
+    filename = f'exps/experiment{experiment}/{y_or_d}/{y_or_d[0]}{int(1/frac):03}_csr_{matname}_mat.pkl'
     print(f'저장파일 : {filename}')
     with open(filename, 'wb') as f:
         pickle.dump(csr_mat, f)
 
 # csr 유사도행렬 로드
 def load_sim_mat(matname, experiment, y_or_d, frac):
-    filename = f'exps/experiment{experiment}/{y_or_d}/{y_or_d[0]}{int(1/frac):03}_csr_{matname}.pkl'
+    filename = f'exps/experiment{experiment}/{y_or_d}/{y_or_d[0]}{int(1/frac):03}_csr_{matname}_mat.pkl'
     print(f'로드 유사도행렬 : {filename}')
     with open(filename, 'rb') as f:
         csr_matrix = pickle.load(f)
@@ -304,9 +321,6 @@ def load_sim_mat(matname, experiment, y_or_d, frac):
     return matrix
 
 
-#%% most_sim_d 만들기
-
-#%%
 
 def find_most_sim(sim_mat, item):
 
@@ -323,7 +337,7 @@ def find_most_sim(sim_mat, item):
   
     return mostsimitem
 
-#%% get most_sim_dictionary : 가장 유사한 아이템만 저장한 딕셔너리
+# get most_sim_dictionary : 가장 유사한 아이템만 저장한 딕셔너리
 
 def make_save_msd(simmetabbr, experiment, y_or_d, frac):
     
@@ -343,8 +357,16 @@ def make_save_msd(simmetabbr, experiment, y_or_d, frac):
     with open(filename, 'wb') as f:
         pickle.dump(d, f)
 
-#%% most sim dict 불러오기
 
+
+
+# 가우시안 함수
+def gaussian(mu, sigma, x):
+    y = (1 / np.sqrt(2 * np.pi * sigma**2)) * np.exp(-(x-mu)**2 / (2 * sigma**2))
+    return y
+
+
+# most sim dict 불러오기
 def load_msd(simmetabbr, experiment, y_or_d, frac):
   with open(f'exps/experiment{experiment}/{y_or_d}/{y_or_d[0]}{int(1/frac):03}_{simmetabbr}_msd.pkl', 'rb') as f:
     most_sim_d = pickle.load(f)
@@ -352,8 +374,13 @@ def load_msd(simmetabbr, experiment, y_or_d, frac):
   return most_sim_d
 
 
-#%% 가우시안 함수
 
-def gaussian(mu, sigma, x):
-    y = (1 / np.sqrt(2 * np.pi * sigma**2)) * np.exp(-(x-mu)**2 / (2 * sigma**2))
-    return y
+def load_tra_seqs_frac(experiment, y_or_d, frac):
+    load_dir = f'exps/experiment{experiment}/{y_or_d}/{y_or_d[0]}{int(1/frac):03}_tra_seqs.pkl'
+    print(f'loading file : {load_dir}')
+    with open(load_dir, 'rb') as q:
+        tra_seqs_frac = pickle.load(q)
+    print(len(tra_seqs_frac))
+    return tra_seqs_frac
+
+

@@ -157,18 +157,13 @@ def narm(train_fns, experiment, y_or_d, frac):
       
             print(f'Epoch {epoch} : Recall@{args.topk}: {recall:.4f}, MRR@{args.topk}: {mrr:.4f} \t{train_fn} \t {i+1}/{len(train_fns)} \t {test_fn}')
         
-        
-        try:
-            # 파일 하다 돌릴때마다 저장할것 (코랩 끊길수도있으니까)
-            with open(f'exps/experiment{experiment}/result_narm_{y_or_d}/{y_or_d[0]}{int(1/frac):03}/{train_fn}_hits.pkl', 'wb') as q:
-              pickle.dump(hits, q)
-          
-            with open(f'exps/experiment{experiment}/result_narm_{y_or_d}/{y_or_d[0]}{int(1/frac):03}/{train_fn}_mrrs.pkl', 'wb') as q:
-              pickle.dump(mrrs, q)
-              
-            
-        except:  # 만약 파일명 등의 문제로 저장이 안 될 경우 결과 리턴
-            return hits, mrrs
+
+        with open(f'exps/experiment{experiment}/result_narm_{y_or_d}/{y_or_d[0]}{int(1/frac):03}/{train_fn}_hits.pkl', 'wb') as q:
+          pickle.dump(hits, q)
+      
+        with open(f'exps/experiment{experiment}/result_narm_{y_or_d}/{y_or_d[0]}{int(1/frac):03}/{train_fn}_mrrs.pkl', 'wb') as q:
+          pickle.dump(mrrs, q)
+
 
 
 
@@ -191,8 +186,7 @@ def srgnn(train_fns, experiment, y_or_d, frac):
     parser.add_argument('--nonhybrid', action='store_true', help='only use the global preference to predict')
     parser.add_argument('--validation', action='store_true', help='validation')
     parser.add_argument('--valid_portion', type=float, default=0.1, help='split the portion of training set as validation set')
-    
-    opt = parser.parse_args()
+    opt = parser.parse_args([])
     print(opt)
     
     test_fn = f'{y_or_d[0]}{int(1/frac):03}_test.txt'
@@ -266,22 +260,6 @@ def srgnn(train_fns, experiment, y_or_d, frac):
     
         with open(f'exps/experiment{experiment}/result_srgnn_{y_or_d}/{y_or_d[0]}{int(1/frac)}/{train_fn}_mrrs.pkl', 'wb') as q:
             pickle.dump(mrrs, q)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
