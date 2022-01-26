@@ -341,7 +341,7 @@ def find_most_sim(sim_mat, item):
 
 def make_save_msd(simmetabbr, experiment, y_or_d, frac):
     
-    sim_mat = load_sim_mat(f'{simmetabbr}_mat', experiment, y_or_d, frac)
+    sim_mat = load_sim_mat(f'{simmetabbr}', experiment, y_or_d, frac)
     nof_items = len(sim_mat)-1
     
     d = {}

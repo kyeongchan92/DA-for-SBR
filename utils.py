@@ -122,6 +122,8 @@ def plot_result(model, experiment, y_or_d, frac, microscope_h=[], microscope_m=[
   train_hit_result = 0
   train_mrr_result = 0
 
+
+
   if model == 'narm':
     result_path = f'/content/drive/MyDrive/015GithubRepos/da_for_sbr/exps/experiment{experiment}/result_{model}_{y_or_d}/{y_or_d[0]}{int(1/frac):03}'
   elif model == 'srgnn':
@@ -130,7 +132,7 @@ def plot_result(model, experiment, y_or_d, frac, microscope_h=[], microscope_m=[
     print('model name error')
     return None
 
-
+  # 폴더 안 파일들 이름 긁기
   from os import listdir
   from os.path import isfile, join
   fns = [f for f in listdir(result_path) if isfile(join(result_path, f))]
@@ -139,10 +141,9 @@ def plot_result(model, experiment, y_or_d, frac, microscope_h=[], microscope_m=[
 
   only_filename = []
   for fullfn in fns:
-    if fullfn[:-9] not in only_filename:
+    if fullfn[:-9] not in only_filename:  # only_filename : 뒤에 _hits.pkl, _mrrs.pkl 없는 순수이름
       only_filename.append(fullfn[:-9])
-    # train 개수 찾기
-    if fullfn[dstgsh_idx:dstgsh_idx+2] == 'tr':
+    if fullfn[dstgsh_idx:dstgsh_idx+2] == 'tr':  # train 개수 찾기
       tr_cnt += 1
   
 
@@ -150,13 +151,18 @@ def plot_result(model, experiment, y_or_d, frac, microscope_h=[], microscope_m=[
   a = 'file name'
   b = 'hits'
   c = 'mrrs'
-  print(f'{a:<40} {b:<20} \t {c:<20}')
+  print(f'{a:<50} {b:<20} \t {c:<20}')
   print()
 
   tr_cnt_reading = 0
   # train데이터 처리
   train_hit_result_list = []
   train_mrr_result_list = []
+  
+  thirdmethod_hits = []
+  thirdmethod_mrrs = []
+  
+  # 순수 file name 돌면서 결과 프린트 ###########################################
   for onlyfn in only_filename:
     with open(f'{result_path}/{onlyfn}_hits.pkl', 'rb') as q:
       hit_result = pickle.load(q)
@@ -164,7 +170,7 @@ def plot_result(model, experiment, y_or_d, frac, microscope_h=[], microscope_m=[
       mrr_result = pickle.load(q)
 
 
-
+    # 빈 공간 채우기
     if model == 'srgnn':
       if len(hit_result) < 30:
         hit_result += [hit_result[-1] for _ in range(30-len(hit_result))]
@@ -181,20 +187,35 @@ def plot_result(model, experiment, y_or_d, frac, microscope_h=[], microscope_m=[
     # dstgsh_idx = get_dstgsh_idx(onlyfn, y_or_d)
     # dstgsh_idx = 5
 
+    # train데이터면 모은다
     if onlyfn[dstgsh_idx:dstgsh_idx+2] == 'tr':
       train_hit_result_list.append(hit_result)  # train 결과를 변수에 저장
       train_mrr_result_list.append(mrr_result)  # train 결과를 변수에 저장
 
-      train_hit_result = np.mean(np.array(train_hit_result_list), axis=0)
+      train_hit_result = np.mean(np.array(train_hit_result_list), axis=0)  # 결과를 평균냄
       train_mrr_result = np.mean(np.array(train_mrr_result_list), axis=0)
       tr_cnt_reading += 1
 
-      print(f'{onlyfn:<40} {hit_result[-1]:<20.4f}  \t {mrr_result[-1]:<20.4f}')
+      print(f'{onlyfn:<50} {hit_result[-1]:<20.4f}  \t {mrr_result[-1]:<20.4f}')
       if tr_cnt / 2 == tr_cnt_reading:
         temp = 'mean of train : '
-        print(f'{temp:<40} {train_hit_result[-1]:<20.4f}  \t {train_mrr_result[-1]:<20.4f}')
+        print(f'{temp:<50} {train_hit_result[-1]:<20.4f}  \t {train_mrr_result[-1]:<20.4f}')
+        
+    # thirdmethod 모은다
+    elif onlyfn[dstgsh_idx:dstgsh_idx+21] == 'thirdmethodar0.3cr0.3':
+      thirdmethod_hits.append(hit_result)  # train 결과를 변수에 저장
+      thirdmethod_mrrs.append(mrr_result)  # train 결과를 변수에 저장
 
+      train_hit_result = np.mean(np.array(train_hit_result_list), axis=0)  # 결과를 평균냄
+      train_mrr_result = np.mean(np.array(train_mrr_result_list), axis=0)
+      tr_cnt_reading += 1
 
+      print(f'{onlyfn:<50} {hit_result[-1]:<20.4f}  \t {mrr_result[-1]:<20.4f}')
+      if tr_cnt / 2 == tr_cnt_reading:
+        temp = 'mean of train : '
+        print(f'{temp:<50} {train_hit_result[-1]:<20.4f}  \t {train_mrr_result[-1]:<20.4f}')
+
+    # 아니면
     else:
       if hit_result[-1] > train_hit_result[-1]:
         hit_goodornot = f'(+{hit_result[-1] - train_hit_result[-1]:.4f})****'
@@ -206,11 +227,14 @@ def plot_result(model, experiment, y_or_d, frac, microscope_h=[], microscope_m=[
       else:
         mrr_goodornot = f'({mrr_result[-1] - train_mrr_result[-1]:.4f})'
 
-      print(f'{onlyfn:40} {hit_result[-1]:<6.4f}{hit_goodornot:<10} \t {mrr_result[-1]:<6.4f}{mrr_goodornot:<10}')
-
+      print(f'{onlyfn:50} {hit_result[-1]:<6.4f}{hit_goodornot:<10} \t {mrr_result[-1]:<6.4f}{mrr_goodornot:<10}')
+  # 순수 file name 돌면서 결과 프린트 ###########################################
   
+  
+  # 그래프 그리기 ##############################################################
   fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(25,10), dpi=80)
-  # hits
+  
+  # hits ############################
   tr_hit_cnt = 0
   for onlyfn in only_filename:
     with open(f'{result_path}/{onlyfn}_hits.pkl', 'rb') as q:
@@ -218,7 +242,7 @@ def plot_result(model, experiment, y_or_d, frac, microscope_h=[], microscope_m=[
 
     if onlyfn[dstgsh_idx:dstgsh_idx+2] == 'tr':
       tr_hit_cnt += 1
-      if tr_hit_cnt == tr_cnt / 2:
+      if tr_hit_cnt == tr_cnt / 2:  # hits, mrrs 모두 다 가져왔으면
         axes[0].plot(train_hit_result, label=f'{y_or_d[0]}{int(1/frac)}_train', marker='o', markersize=10)
     else:
       axes[0].plot(hit_result, label=onlyfn)
@@ -232,7 +256,7 @@ def plot_result(model, experiment, y_or_d, frac, microscope_h=[], microscope_m=[
       axes[0].set_ylim((microscope_h[0], microscope_h[1]))
 
 
-  # mrrs
+  # mrrs ############################
   tr_mrr_cnt = 0
   for onlyfn in only_filename:
     with open(f'{result_path}/{onlyfn}_mrrs.pkl', 'rb') as q:
@@ -250,5 +274,5 @@ def plot_result(model, experiment, y_or_d, frac, microscope_h=[], microscope_m=[
   axes[1].legend(bbox_to_anchor=(1, 1), fontsize=15)
   if microscope_m:
       axes[1].set_ylim((microscope_m[0], microscope_m[1]))
-  
+  # 그래프 그리기 ##############################################################
   
